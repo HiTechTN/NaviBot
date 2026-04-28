@@ -1,0 +1,9 @@
+.env
+storage_state.json
+__pycache__/
+*.pyc
+logs/
+reports/
+.pytest_cache/
+*.log
+.DS_Store

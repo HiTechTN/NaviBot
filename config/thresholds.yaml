@@ -1,0 +1,5 @@
+tolerance_threshold: 0.05
+alerts:
+  irpef_deviation: true
+  net_pay_deviation: true
+  quattordicesima_prorata: true
