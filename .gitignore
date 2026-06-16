@@ -6,4 +6,5 @@ logs/
 reports/
 .pytest_cache/
 *.log
+.playwright_profile/
 .DS_Store
