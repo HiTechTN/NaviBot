@@ -1,31 +1,18 @@
 import asyncio
 import json
 from pathlib import Path
-from playwright.async_api import async_playwright
-from src.config.settings import settings
-from src.utils.logger import get_logger, take_screenshot
+from loguru import logger
+from src.grasp.browser import ADPBrowser
+from src.utils.logger import take_screenshot
 
-logger = get_logger(__name__)
-STORAGE_STATE_PATH = Path("storage_state.json")
 INSPECTION_OUTPUT = Path("logs/adp_inspection.json")
 
 
 async def inspect_adp_interface():
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False)
-        context = await browser.new_context(
-            storage_state=STORAGE_STATE_PATH if STORAGE_STATE_PATH.exists() else None
-        )
-        page = await context.new_page()
-
-        if not STORAGE_STATE_PATH.exists():
-            logger.info("No session found, logging in")
-            await page.goto(settings.ADP_LOGIN_URL)
-            await page.get_by_role("textbox", name="Username").fill(settings.ADP_USERNAME)
-            await page.get_by_role("textbox", name="Password").fill(settings.ADP_PASSWORD)
-            await page.get_by_role("button", name="Login").click()
-            await page.wait_for_url("**/dashboard", timeout=30000)
-            await context.storage_state(path=STORAGE_STATE_PATH)
+    browser = ADPBrowser()
+    try:
+        page = await browser.initialize()
+        await browser.login()
 
         await page.get_by_role("link", name="Payroll").click()
         await page.wait_for_load_state("networkidle")
@@ -77,6 +64,7 @@ async def inspect_adp_interface():
         INSPECTION_OUTPUT.write_text(json.dumps(result, indent=2, ensure_ascii=False))
         logger.info(f"Inspection results saved to {INSPECTION_OUTPUT}")
         await take_screenshot(page, "adp_inspection")
+    finally:
         await browser.close()
 
 

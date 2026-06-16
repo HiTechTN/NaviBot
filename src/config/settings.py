@@ -1,13 +1,22 @@
 from pydantic import BaseModel
-from src.utils.security import get_env_var
+from src.utils.security import CredentialManager
 
 
 class Settings(BaseModel):
-    ADP_USERNAME: str = get_env_var("ADP_USERNAME")
-    ADP_PASSWORD: str = get_env_var("ADP_PASSWORD")
-    ADP_LOGIN_URL: str = get_env_var("ADP_LOGIN_URL")
-    TOLERANCE_THRESHOLD: float = float(get_env_var("TOLERANCE_THRESHOLD", "0.05"))
-    LOG_LEVEL: str = get_env_var("LOG_LEVEL", "INFO")
+    ADP_USERNAME: str | None = None
+    ADP_PASSWORD: str | None = None
+    ADP_LOGIN_URL: str | None = None
+    TOLERANCE_THRESHOLD: float = 0.05
+    LOG_LEVEL: str = "INFO"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Auto-discover credentials if not already provided
+        if not self.ADP_LOGIN_URL:
+            creds = CredentialManager.discover()
+            self.ADP_USERNAME = creds.get("ADP_USERNAME") or self.ADP_USERNAME
+            self.ADP_PASSWORD = creds.get("ADP_PASSWORD") or self.ADP_PASSWORD
+            self.ADP_LOGIN_URL = creds.get("ADP_LOGIN_URL") or self.ADP_LOGIN_URL
 
 
 settings = Settings()
